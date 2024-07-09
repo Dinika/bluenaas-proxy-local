@@ -28,7 +28,7 @@ help:
 	@echo "$$HELPTEXT"
 
 dev:
-	poetry run uvicorn virtual_labs.api:app --reload
+	poetry run uvicorn bluenaas_proxy_local.api:app --port 8090 --reload
 
 dev-p:
 	@poetry run dotenv -f .env.local set STRIPE_WEBHOOK_SECRET $$(poetry run dotenv -f env-prep/stripe-data/.env.local get STRIPE_WEBHOOK_SECRET) > /dev/null
