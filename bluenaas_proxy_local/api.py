@@ -1,24 +1,31 @@
+import json
+from typing import Any
 from fastapi import FastAPI, WebSocket
 from requests import post
+from time import sleep
+
 
 app = FastAPI()
 
-bluenass_endpoint = "http://localhost:8000"
+bluenaas_endpoint = "http://localhost:8000"
 
-websocket_conn: any = None
-
+global_ws: WebSocket | None = None
 
 @app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    while True:
-        websocket_conn = websocket
-        print(websocket_conn)
+    global global_ws
+    global_ws = websocket
+    try:
         token = websocket.headers["sec-websocket-protocol"]
-        post(f"{bluenass_endpoint}/init", json={"token": token})
+        post(f"{bluenaas_endpoint}/init", json={"token": token})
+        sleep(2)
+    except Exception as e:
+        print(f"websocket_endpoint/e: {type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}")
 
 
 @app.post("/")
-async def message_from_bluenaas(msg: any):
+async def message_from_bluenaas(msg: Any) -> None:
     print("MESSAGE", msg)
-    websocket_conn.send_json(msg)
+
+    return None
