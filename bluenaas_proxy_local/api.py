@@ -5,14 +5,20 @@ app = FastAPI()
 
 bluenass_endpoint = "http://localhost:8000"
 
+websocket_conn: any = None
+
 
 @app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     while True:
-        data = await websocket.receive_json()
+        websocket_conn = websocket
+        print(websocket_conn)
         token = websocket.headers["sec-websocket-protocol"]
-        # await websocket.send_text(f"Message text was: {data}")
-        # token = data["token"]
-        response = post(f"{bluenass_endpoint}/init", json={"token": token})
-        # print("Token", response)
+        post(f"{bluenass_endpoint}/init", json={"token": token})
+
+
+@app.post("/")
+async def message_from_bluenaas(msg: any):
+    print("MESSAGE", msg)
+    websocket_conn.send_json(msg)
