@@ -7,9 +7,10 @@ from time import sleep
 
 app = FastAPI()
 
-bluenaas_endpoint = "http://localhost:8000"
+bluenaas_endpoint = "http://localhost:8005"
 
 global_ws: WebSocket | None = None
+
 
 @app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
@@ -18,10 +19,16 @@ async def websocket_endpoint(websocket: WebSocket):
     global_ws = websocket
     try:
         token = websocket.headers["sec-websocket-protocol"]
-        post(f"{bluenaas_endpoint}/init", json={"token": token})
-        sleep(2)
+        init_response = post(f"{bluenaas_endpoint}/init", json={"token": token})
+        print("Init Response", init_response.json())
+        deploy_response = post(f"{bluenaas_endpoint}/deploy", json={"token": token})
+        print("Deploy Response", deploy_response.json())
     except Exception as e:
-        print(f"websocket_endpoint/e: {type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}")
+        print(
+            f"websocket_endpoint/e: {type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}"
+        )
+
+    await websocket.send_json({"message": "Processing message"})
 
 
 @app.post("/")
