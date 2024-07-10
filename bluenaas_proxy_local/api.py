@@ -1,13 +1,10 @@
-import json
 from typing import Any
-from fastapi import FastAPI, WebSocket
+from fastapi import Body, FastAPI, WebSocket
 from requests import post
-from time import sleep
-
 
 app = FastAPI()
 
-bluenaas_endpoint = "http://localhost:8005"
+bluenaas_endpoint = "http://localhost:8017"
 
 global_ws: WebSocket | None = None
 
@@ -18,21 +15,31 @@ async def websocket_endpoint(websocket: WebSocket):
     global global_ws
     global_ws = websocket
     try:
-        token = websocket.headers["sec-websocket-protocol"]
+        plain_token = websocket.headers["sec-websocket-protocol"]
+        token = plain_token.replace("Bearer-", "Bearer ")
         init_response = post(f"{bluenaas_endpoint}/init", json={"token": token})
         print("Init Response", init_response.json())
-        deploy_response = post(f"{bluenaas_endpoint}/deploy", json={"token": token})
+        deploy_response = post(f"{bluenaas_endpoint}/default", json={"token": token})
         print("Deploy Response", deploy_response.json())
     except Exception as e:
         print(
             f"websocket_endpoint/e: {type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}"
         )
 
-    await websocket.send_json({"message": "Processing message"})
+    while True:
+        data = await websocket.receive_json()
+        print("Frontend Data", data)
+        if data == {}:
+            print("Empty data")
+            await websocket.send_json({"message": "Processing message"})
+
+        if data.get("cmd") is not None:
+            cmd_response = post(f"{bluenaas_endpoint}/default", json=data)
+            print("CMD Response", cmd_response.json())
 
 
 @app.post("/")
-async def message_from_bluenaas(msg: Any) -> None:
+async def message_from_bluenaas(msg: Any = Body(None)) -> None:
     print("MESSAGE", msg)
 
     return None
